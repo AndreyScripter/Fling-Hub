@@ -1,0 +1,100 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local rootPart = character:FindFirstChild("HumanoidRootPart")
+
+-- Creare UI principal
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = player:WaitForChild("PlayerGui")
+
+local Frame = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local FlingButton = Instance.new("TextButton")
+local CloseButton = Instance.new("TextButton")
+
+-- Creare iconiță pătrată "FH"
+local MiniButton = Instance.new("TextButton")
+MiniButton.Size = UDim2.new(0, 50, 0, 50)
+MiniButton.Position = UDim2.new(0.05, 0, 0.05, 0)
+MiniButton.BackgroundColor3 = Color3.fromRGB(255, 140, 0) -- Portocaliu
+MiniButton.Text = "FH"
+MiniButton.TextColor3 = Color3.fromRGB(0, 0, 0) -- Negru
+MiniButton.TextScaled = true
+MiniButton.Font = Enum.Font.Garamond -- Italic
+MiniButton.Visible = false -- Inițial ascuns
+MiniButton.Draggable = true
+MiniButton.Active = true
+MiniButton.Parent = ScreenGui
+
+-- UI Principal
+Frame.Size = UDim2.new(0, 320, 0, 200) 
+Frame.Position = UDim2.new(0.3, 0, 0.3, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50) -- Gri închis
+Frame.BorderSizePixel = 4
+Frame.BorderColor3 = Color3.fromRGB(0, 0, 0) -- Contur negru
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+Title.Text = "Fling Hub"
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundTransparency = 1
+Title.TextColor3 = Color3.fromRGB(255, 140, 0) -- Portocaliu
+Title.TextStrokeTransparency = 0 -- Contur activ
+Title.TextStrokeColor3 = Color3.fromRGB(0, 0, 0) -- Negru
+Title.Font = Enum.Font.GothamBold
+Title.TextScaled = true
+Title.Parent = Frame
+
+-- Buton de închidere "X"
+CloseButton.Text = "X"
+CloseButton.Size = UDim2.new(0, 20, 0, 20)
+CloseButton.Position = UDim2.new(1, -25, 0, 5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.Parent = Frame
+
+FlingButton.Text = "Fling All"
+FlingButton.Size = UDim2.new(0, 150, 0, 50)
+FlingButton.Position = UDim2.new(0.5, -75, 0.5, -25)
+FlingButton.BackgroundColor3 = Color3.fromRGB(255, 140, 0) -- Portocaliu
+FlingButton.TextColor3 = Color3.fromRGB(0, 0, 0) -- Negru
+FlingButton.Font = Enum.Font.GothamBold
+FlingButton.TextScaled = true
+FlingButton.Parent = Frame
+
+-- Funcția de Fling
+local function flingTarget(target)
+    local targetRoot = target:FindFirstChild("HumanoidRootPart")
+    
+    if targetRoot then
+        local bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.Velocity = Vector3.new(math.random(-100, 100), 500, math.random(-100, 100)) -- Aruncare haotică
+        bodyVelocity.MaxForce = Vector3.new(100000, 100000, 100000) -- Putere maximă
+        bodyVelocity.Parent = targetRoot
+        
+        -- Elimină forța după 0.2 secunde
+        game:GetService("Debris"):AddItem(bodyVelocity, 0.2)
+    end
+end
+
+-- Când apeși pe "Fling All"
+FlingButton.MouseButton1Click:Connect(function()
+    for _, v in pairs(game.Players:GetPlayers()) do
+        if v ~= player and v.Character then
+            flingTarget(v.Character)
+        end
+    end
+end)
+
+-- Ascunde UI și afișează iconița
+CloseButton.MouseButton1Click:Connect(function()
+    Frame.Visible = false
+    MiniButton.Visible = true
+end)
+
+-- Reafișează UI când apeși pe iconiță
+MiniButton.MouseButton1Click:Connect(function()
+    Frame.Visible = true
+    MiniButton.Visible = false
+end)
