@@ -2,7 +2,7 @@ local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local rootPart = character:FindFirstChild("HumanoidRootPart")
 
--- Creare UI principal
+-- UI Principal
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = player:WaitForChild("PlayerGui")
@@ -63,18 +63,36 @@ FlingButton.Font = Enum.Font.GothamBold
 FlingButton.TextScaled = true
 FlingButton.Parent = Frame
 
--- Funcția de Fling
+-- Funcția de Fling îmbunătățită
 local function flingTarget(target)
     local targetRoot = target:FindFirstChild("HumanoidRootPart")
     
     if targetRoot then
+        -- Adăugăm un obiect de coliziune invizibil pentru a împinge playerii
+        local flingPart = Instance.new("Part")
+        flingPart.Size = Vector3.new(10, 10, 10)
+        flingPart.Transparency = 1
+        flingPart.Anchored = false
+        flingPart.CanCollide = false
+        flingPart.Parent = game.Workspace
+
+        -- Poziționăm cubul invizibil lângă jucător
+        flingPart.Position = targetRoot.Position + Vector3.new(0, 3, 0)
+
+        -- Adăugăm forță pentru a-l arunca
         local bodyVelocity = Instance.new("BodyVelocity")
         bodyVelocity.Velocity = Vector3.new(math.random(-100, 100), 500, math.random(-100, 100)) -- Aruncare haotică
-        bodyVelocity.MaxForce = Vector3.new(100000, 100000, 100000) -- Putere maximă
-        bodyVelocity.Parent = targetRoot
-        
-        -- Elimină forța după 0.2 secunde
-        game:GetService("Debris"):AddItem(bodyVelocity, 0.2)
+        bodyVelocity.MaxForce = Vector3.new(500000, 500000, 500000) -- Forță mare
+        bodyVelocity.Parent = flingPart
+
+        -- Facem ca obiectul invizibil să împingă playerul și să dispară
+        flingPart.Touched:Connect(function(hit)
+            if hit.Parent == target then
+                targetRoot.Velocity = bodyVelocity.Velocity
+            end
+        end)
+
+        game:GetService("Debris"):AddItem(flingPart, 0.2) -- Ștergem obiectul după 0.2 secunde
     end
 end
 
