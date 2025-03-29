@@ -2,117 +2,46 @@ local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local rootPart = character:FindFirstChild("HumanoidRootPart")
 
--- UI Principal
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = player:WaitForChild("PlayerGui")
+if not rootPart then
+    warn("Nu s-a găsit HumanoidRootPart!")
+    return
+end
 
-local Frame = Instance.new("Frame")
-local Title = Instance.new("TextLabel")
-local FlingButton = Instance.new("TextButton")
-local CloseButton = Instance.new("TextButton")
+-- Salvăm poziția inițială pentru a reveni după fling
+local initialPosition = rootPart.Position
 
--- Creare iconiță pătrată "FH"
-local MiniButton = Instance.new("TextButton")
-MiniButton.Size = UDim2.new(0, 50, 0, 50)
-MiniButton.Position = UDim2.new(0.05, 0, 0.05, 0)
-MiniButton.BackgroundColor3 = Color3.fromRGB(255, 140, 0) -- Portocaliu
-MiniButton.Text = "FH"
-MiniButton.TextColor3 = Color3.fromRGB(0, 0, 0) -- Negru
-MiniButton.TextScaled = true
-MiniButton.Font = Enum.Font.Garamond -- Italic
-MiniButton.Visible = false -- Inițial ascuns
-MiniButton.Draggable = true
-MiniButton.Active = true
-MiniButton.Parent = ScreenGui
-
--- UI Principal
-Frame.Size = UDim2.new(0, 320, 0, 200) 
-Frame.Position = UDim2.new(0.3, 0, 0.3, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50) -- Gri închis
-Frame.BorderSizePixel = 4
-Frame.BorderColor3 = Color3.fromRGB(0, 0, 0) -- Contur negru
-Frame.Active = true
-Frame.Draggable = true
-Frame.Parent = ScreenGui
-
-Title.Text = "Fling Hub"
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.BackgroundTransparency = 1
-Title.TextColor3 = Color3.fromRGB(255, 140, 0) -- Portocaliu
-Title.TextStrokeTransparency = 0 -- Contur activ
-Title.TextStrokeColor3 = Color3.fromRGB(0, 0, 0) -- Negru
-Title.Font = Enum.Font.GothamBold
-Title.TextScaled = true
-Title.Parent = Frame
-
--- Buton de închidere "X"
-CloseButton.Text = "X"
-CloseButton.Size = UDim2.new(0, 20, 0, 20)
-CloseButton.Position = UDim2.new(1, -25, 0, 5)
-CloseButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.Parent = Frame
-
-FlingButton.Text = "Fling All"
-FlingButton.Size = UDim2.new(0, 150, 0, 50)
-FlingButton.Position = UDim2.new(0.5, -75, 0.5, -25)
-FlingButton.BackgroundColor3 = Color3.fromRGB(255, 140, 0) -- Portocaliu
-FlingButton.TextColor3 = Color3.fromRGB(0, 0, 0) -- Negru
-FlingButton.Font = Enum.Font.GothamBold
-FlingButton.TextScaled = true
-FlingButton.Parent = Frame
-
--- Funcția de Fling îmbunătățită
+-- Funcție pentru a arunca un jucător
 local function flingTarget(target)
     local targetRoot = target:FindFirstChild("HumanoidRootPart")
     
     if targetRoot then
-        -- Adăugăm un obiect de coliziune invizibil pentru a împinge playerii
-        local flingPart = Instance.new("Part")
-        flingPart.Size = Vector3.new(10, 10, 10)
-        flingPart.Transparency = 1
-        flingPart.Anchored = false
-        flingPart.CanCollide = false
-        flingPart.Parent = game.Workspace
+        -- Salvăm coliziunile inițiale
+        local oldCollision = rootPart.CanCollide
 
-        -- Poziționăm cubul invizibil lângă jucător
-        flingPart.Position = targetRoot.Position + Vector3.new(0, 3, 0)
+        -- Atașăm playerul nostru de celălalt player
+        rootPart.CFrame = targetRoot.CFrame
+        rootPart.Anchored = false
+        rootPart.CanCollide = true
 
-        -- Adăugăm forță pentru a-l arunca
+        -- Adăugăm o forță de fling puternică
         local bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.Velocity = Vector3.new(math.random(-100, 100), 500, math.random(-100, 100)) -- Aruncare haotică
-        bodyVelocity.MaxForce = Vector3.new(500000, 500000, 500000) -- Forță mare
-        bodyVelocity.Parent = flingPart
+        bodyVelocity.Velocity = Vector3.new(math.random(-100, 100), 500, math.random(-100, 100)) -- Forță haotică
+        bodyVelocity.MaxForce = Vector3.new(500000, 500000, 500000) -- Super forță
+        bodyVelocity.Parent = rootPart
 
-        -- Facem ca obiectul invizibil să împingă playerul și să dispară
-        flingPart.Touched:Connect(function(hit)
-            if hit.Parent == target then
-                targetRoot.Velocity = bodyVelocity.Velocity
-            end
-        end)
+        -- Așteptăm puțin pentru efectul de fling
+        wait(0.2)
 
-        game:GetService("Debris"):AddItem(flingPart, 0.2) -- Ștergem obiectul după 0.2 secunde
+        -- Resetăm jucătorul la poziția inițială
+        bodyVelocity:Destroy()
+        rootPart.CFrame = CFrame.new(initialPosition)
+        rootPart.CanCollide = oldCollision
     end
 end
 
--- Când apeși pe "Fling All"
-FlingButton.MouseButton1Click:Connect(function()
-    for _, v in pairs(game.Players:GetPlayers()) do
-        if v ~= player and v.Character then
-            flingTarget(v.Character)
-        end
+-- Execută Fling pentru toți jucătorii
+for _, v in pairs(game.Players:GetPlayers()) do
+    if v ~= player and v.Character then
+        flingTarget(v.Character)
     end
-end)
-
--- Ascunde UI și afișează iconița
-CloseButton.MouseButton1Click:Connect(function()
-    Frame.Visible = false
-    MiniButton.Visible = true
-end)
-
--- Reafișează UI când apeși pe iconiță
-MiniButton.MouseButton1Click:Connect(function()
-    Frame.Visible = true
-    MiniButton.Visible = false
-end)
+end
